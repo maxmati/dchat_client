@@ -28,7 +28,11 @@ start_link() ->
 
 %% Child :: {Id,StartFunc,Restart,Shutdown,Type,Modules}
 init([]) ->
-    {ok, { {one_for_all, 0, 1}, []} }.
+    RestartStrategy = {one_for_all, 0, 1},
+    ConnectionSupSpec = {connection_sup, {dchat_client_connection_sup, start_link, []},
+        permanent, brutal_kill, worker, [dchat_client_connection_sup]},
+    Children = [ConnectionSupSpec],
+    {ok, { RestartStrategy, Children} }.
 
 %%====================================================================
 %% Internal functions
