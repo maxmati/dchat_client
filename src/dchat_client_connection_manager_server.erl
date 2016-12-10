@@ -4,15 +4,15 @@
 %%% @doc
 %%%
 %%% @end
-%%% Created : 04. Dec 2016 11:30 PM
+%%% Created : 10. Dec 2016 9:56 PM
 %%%-------------------------------------------------------------------
--module(dchat_client_connection_server).
+-module(dchat_client_connection_manager_server).
 -author("maxmati").
 
 -behaviour(gen_server).
 
 %% API
--export([start_link/2]).
+-export([start_link/0]).
 
 %% gen_server callbacks
 -export([init/1,
@@ -24,7 +24,7 @@
 
 -define(SERVER, ?MODULE).
 
--record(state, {socket}).
+-record(state, {}).
 
 %%%===================================================================
 %%% API
@@ -36,10 +36,10 @@
 %%
 %% @end
 %%--------------------------------------------------------------------
--spec(start_link(Hostname :: term(), Port :: term()) ->
+-spec(start_link() ->
   {ok, Pid :: pid()} | ignore | {error, Reason :: term()}).
-start_link(Hostname, Port) ->
-  gen_server:start_link(?MODULE, [Hostname, Port], []).
+start_link() ->
+  gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
 %%%===================================================================
 %%% gen_server callbacks
@@ -59,8 +59,8 @@ start_link(Hostname, Port) ->
 -spec(init(Args :: term()) ->
   {ok, State :: #state{}} | {ok, State :: #state{}, timeout() | hibernate} |
   {stop, Reason :: term()} | ignore).
-init([Hostname, Port]) ->
-  {ok, #state{socket = internal_connect(Hostname, Port)}}.
+init([]) ->
+  {ok, #state{}}.
 
 %%--------------------------------------------------------------------
 %% @private
@@ -144,7 +144,3 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
-
-internal_connect(Hostname, Port) ->
-  {ok, Socket} = gen_tcp:connect(Hostname, Port, [binary, {active,true}]),
-  Socket.

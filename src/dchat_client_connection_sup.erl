@@ -12,7 +12,7 @@
 -behaviour(supervisor).
 
 %% API
--export([start_link/0]).
+-export([start_link/0, connect/2]).
 
 %% Supervisor callbacks
 -export([init/1]).
@@ -22,6 +22,9 @@
 %%%===================================================================
 %%% API functions
 %%%===================================================================
+
+connect(Hostname, Port) ->
+  supervisor:start_child(dchat_client_connection_sup, [Hostname, Port]).
 
 %%--------------------------------------------------------------------
 %% @doc
@@ -56,7 +59,7 @@ start_link() ->
   ignore |
   {error, Reason :: term()}).
 init([]) ->
-  RestartStrategy = one_for_one,
+  RestartStrategy = simple_one_for_one,
   MaxRestarts = 1000,
   MaxSecondsBetweenRestarts = 3600,
 
@@ -66,10 +69,10 @@ init([]) ->
   Shutdown = 2000,
   Type = worker,
 
-  AChild = {'dchat_client_connection_server', {dchat_client_connection_server, start_link, []},
+  ConnectionServer = {connection_server, {dchat_client_connection_server, start_link, []},
     Restart, Shutdown, Type, [dchat_client_connection_server]},
 
-  {ok, {SupFlags, [AChild]}}.
+  {ok, {SupFlags, [ConnectionServer]}}.
 
 %%%===================================================================
 %%% Internal functions
