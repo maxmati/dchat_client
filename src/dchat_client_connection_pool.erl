@@ -6,13 +6,13 @@
 %%% @end
 %%% Created : 04. Dec 2016 11:36 PM
 %%%-------------------------------------------------------------------
--module(dchat_client_connection_sup).
+-module(dchat_client_connection_pool).
 -author("maxmati").
 
 -behaviour(supervisor).
 
 %% API
--export([start_link/0, connect/2]).
+-export([start_link/0, connect/2, get_any_connection/0]).
 
 %% Supervisor callbacks
 -export([init/1]).
@@ -24,7 +24,11 @@
 %%%===================================================================
 
 connect(Hostname, Port) ->
-  supervisor:start_child(dchat_client_connection_sup, [Hostname, Port]).
+  supervisor:start_child(?SERVER, [Hostname, Port]).
+
+get_any_connection() ->
+  [{_, Pid, _, _}| _] = supervisor:which_children(?SERVER),
+  Pid.
 
 %%--------------------------------------------------------------------
 %% @doc
@@ -69,8 +73,8 @@ init([]) ->
   Shutdown = 2000,
   Type = worker,
 
-  ConnectionServer = {connection_server, {dchat_client_connection_server, start_link, []},
-    Restart, Shutdown, Type, [dchat_client_connection_server]},
+  ConnectionServer = {connection, {dchat_client_connection, start_link, []},
+    Restart, Shutdown, Type, [dchat_client_connection]},
 
   {ok, {SupFlags, [ConnectionServer]}}.
 

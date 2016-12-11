@@ -6,13 +6,15 @@
 %%% @end
 %%% Created : 10. Dec 2016 9:56 PM
 %%%-------------------------------------------------------------------
--module(dchat_client_connection_manager_server).
+-module(dchat_client_connection_manager).
 -author("maxmati").
 
 -behaviour(gen_server).
 
 %% API
--export([start_link/0]).
+-export([start_link/0,
+  connect/1,
+  send/1]).
 
 %% gen_server callbacks
 -export([init/1,
@@ -24,11 +26,16 @@
 
 -define(SERVER, ?MODULE).
 
--record(state, {}).
+-record(state, {designated}).
 
 %%%===================================================================
 %%% API
 %%%===================================================================
+connect(Server) ->
+  gen_server:cast(?SERVER, {connect, Server}).
+
+send(Message) ->
+  gen_server:cast(?SERVER, {send, Message}).
 
 %%--------------------------------------------------------------------
 %% @doc
@@ -91,8 +98,16 @@ handle_call(_Request, _From, State) ->
   {noreply, NewState :: #state{}} |
   {noreply, NewState :: #state{}, timeout() | hibernate} |
   {stop, Reason :: term(), NewState :: #state{}}).
+handle_cast({connect, Server}, State) ->
+  connect_to(Server),
+  {noreply, update_designated(State)};
+handle_cast({send, Message}, State) ->
+  Server = get_designated(State#state.designated),
+  dchat_client_connection:send(Server, Message),
+  {noreply, State};
 handle_cast(_Request, State) ->
   {noreply, State}.
+
 
 %%--------------------------------------------------------------------
 %% @private
@@ -144,3 +159,15 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+update_designated(State) ->
+  Designated = State#state.designated,
+  State#state{designated = get_designated(Designated)}.
+
+get_designated(undefined) ->
+  dchat_client_connection_pool:get_any_connection();
+get_designated(Designated) ->
+  Designated.
+
+connect_to({Hostname, Port}) ->
+  {ok, Server} = dchat_client_connection_pool:connect(Hostname, Port),
+  Server.

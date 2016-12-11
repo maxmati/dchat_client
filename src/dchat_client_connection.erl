@@ -6,13 +6,14 @@
 %%% @end
 %%% Created : 04. Dec 2016 11:30 PM
 %%%-------------------------------------------------------------------
--module(dchat_client_connection_server).
+-module(dchat_client_connection).
 -author("maxmati").
 
 -behaviour(gen_server).
 
 %% API
--export([start_link/2]).
+-export([start_link/2,
+  send/2]).
 
 %% gen_server callbacks
 -export([init/1,
@@ -29,6 +30,9 @@
 %%%===================================================================
 %%% API
 %%%===================================================================
+
+send(Server, Message) ->
+  gen_server:cast(Server, {send, Message}).
 
 %%--------------------------------------------------------------------
 %% @doc
@@ -91,6 +95,10 @@ handle_call(_Request, _From, State) ->
   {noreply, NewState :: #state{}} |
   {noreply, NewState :: #state{}, timeout() | hibernate} |
   {stop, Reason :: term(), NewState :: #state{}}).
+handle_cast({send, Message}, State) ->
+  Socket = State#state.socket,
+  ok = gen_tcp:send(Socket, term_to_binary(Message)),
+  {noreply, State};
 handle_cast(_Request, State) ->
   {noreply, State}.
 

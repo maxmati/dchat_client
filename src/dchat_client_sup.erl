@@ -29,9 +29,9 @@ start_link() ->
 %% Child :: {Id,StartFunc,Restart,Shutdown,Type,Modules}
 init([]) ->
     RestartStrategy = {one_for_all, 0, 1},
-    ConnectionSupSpec = {connection_sup, {dchat_client_connection_sup, start_link, []},
-        permanent, brutal_kill, worker, [dchat_client_connection_sup]},
-    Children = [ConnectionSupSpec],
+    ConnectionManagerSupSpec = {connection_manager_sup, {dchat_client_connection_manager_sup, start_link, []},
+        permanent, brutal_kill, worker, [dchat_client_connection_manager_sup]},
+    Children = [ConnectionManagerSupSpec],
     {ok, { RestartStrategy, Children} }.
 
 %%====================================================================
