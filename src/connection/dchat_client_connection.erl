@@ -54,6 +54,8 @@ handle_cast({send, Message}, State) ->
 handle_cast(_Request, State) ->
   {noreply, State}.
 
+handle_info({tcp_closed,_}, State) ->
+  {stop, normal, State};
 handle_info(_Info, State) ->
   {noreply, State}.
 
