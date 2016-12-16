@@ -1,6 +1,5 @@
 %%%-------------------------------------------------------------------
 %%% @author maxmati
-%%% @copyright (C) 2016, <COMPANY>
 %%% @doc
 %%%
 %%% @end
@@ -17,21 +16,19 @@
 %% Supervisor callbacks
 -export([init/1]).
 
--define(SERVER, ?MODULE).
-
 %%%===================================================================
 %%% API functions
 %%%===================================================================
 
 connect(Hostname, Port) ->
-  supervisor:start_child(?SERVER, [Hostname, Port]).
+  supervisor:start_child(?MODULE, [Hostname, Port]).
 
 get_any_connection() ->
-  [{_, Pid, _, _}| _] = supervisor:which_children(?SERVER),
+  [{_, Pid, _, _}| _] = supervisor:which_children(?MODULE),
   Pid.
 
 start_link() ->
-  supervisor:start_link({local, ?SERVER}, ?MODULE, []).
+  supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
 %%%===================================================================
 %%% Supervisor callbacks

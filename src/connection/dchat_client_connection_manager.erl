@@ -1,6 +1,5 @@
 %%%-------------------------------------------------------------------
 %%% @author maxmati
-%%% @copyright (C) 2016, <COMPANY>
 %%% @doc
 %%%
 %%% @end
@@ -24,21 +23,19 @@
   terminate/2,
   code_change/3]).
 
--define(SERVER, ?MODULE).
-
 -record(state, {designated}).
 
 %%%===================================================================
 %%% API
 %%%===================================================================
 connect(Server) ->
-  gen_server:cast(?SERVER, {connect, Server}).
+  gen_server:cast(?MODULE, {connect, Server}).
 
 send(Message) ->
-  gen_server:cast(?SERVER, {send, Message}).
+  gen_server:cast(?MODULE, {send, Message}).
 
 start_link() ->
-  gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
+  gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 %%%===================================================================
 %%% gen_server callbacks
