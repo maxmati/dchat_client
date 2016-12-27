@@ -53,6 +53,10 @@ handle_cast(_Request, State) ->
 
 handle_info({tcp_closed,_}, State) ->
   {stop, normal, State};
+handle_info({tcp,_, Data}, State) ->
+  {Command, Params} = binary_to_term(Data),
+  dchat_client_connection_manager:dispatch(self(),Command,Params),
+  {noreply, State};
 handle_info(_Info, State) ->
   {noreply, State}.
 
@@ -67,5 +71,5 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 
 internal_connect(Hostname, Port) ->
-  {ok, Socket} = gen_tcp:connect(Hostname, Port, [binary, {active,true}]),
+  {ok, Socket} = gen_tcp:connect(Hostname, Port, [binary, {active,true,packet,4}]),
   Socket.
