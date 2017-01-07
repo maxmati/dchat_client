@@ -71,5 +71,5 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 
 internal_connect(Hostname, Port) ->
-  {ok, Socket} = gen_tcp:connect(Hostname, Port, [binary, {active,true,packet,4}]),
+  {ok, Socket} = gen_tcp:connect(Hostname, Port, [binary, {active,true}, {packet,4}]),
   Socket.
