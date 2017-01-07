@@ -13,7 +13,10 @@
 %% API
 -export([start_link/0,
   connect/1,
-  send/1]).
+  send/1,
+  dispatch/3,
+  register_handler/2]).
+
 
 %% gen_server callbacks
 -export([init/1,
@@ -23,7 +26,7 @@
   terminate/2,
   code_change/3]).
 
--record(state, {designated}).
+-record(state, {designated, handlers}).
 
 %%%===================================================================
 %%% API
@@ -37,12 +40,18 @@ send(Message) ->
 start_link() ->
   gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
+dispatch(Connection, Command, Params) ->
+  gen_server:cast(?MODULE, {dispatch,Connection, Command, Params}).
+
+register_handler(Command, Handler) ->
+  gen_server:cast(?MODULE, {register, Command, Handler}).
+
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================
 
 init([]) ->
-  {ok, #state{}}.
+  {ok, #state{handlers = dict:new() }}.
 
 handle_call(_Request, _From, State) ->
   {reply, ok, State}.
@@ -54,6 +63,14 @@ handle_cast({send, Message}, State) ->
   Server = get_designated(State#state.designated),
   dchat_client_connection:send(Server, Message),
   {noreply, State};
+handle_cast({dispatch, Connection, Command, Params}, State) ->
+  Func = dict:fetch(Command, State#state.handlers),
+  Func(Connection, Params),
+  {noreply, State};
+handle_cast({register, Command, Handler}, State) ->
+  NewHandlers = dict:append(Command, Handler, State#state.handlers),
+  NewState = State#state{handlers = NewHandlers},
+  {noreply, NewState};
 handle_cast(_Request, State) ->
   {noreply, State}.
 
