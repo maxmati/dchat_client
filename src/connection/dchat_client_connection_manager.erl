@@ -64,8 +64,10 @@ handle_cast({send, Message}, State) ->
   dchat_client_connection:send(Server, Message),
   {noreply, State};
 handle_cast({dispatch, Connection, Command, Params}, State) ->
-  Func = dict:fetch(Command, State#state.handlers),
-  Func(Connection, Params),
+  case dict:find(Command, State#state.handlers) of
+    {ok, Func} -> Func(Connection, Params);
+    error -> io:format("unsupported command ~s(~s)~n", [Command, Params])
+  end,
   {noreply, State};
 handle_cast({register, Command, Handler}, State) ->
   NewHandlers = dict:append(Command, Handler, State#state.handlers),
