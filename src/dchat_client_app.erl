@@ -13,10 +13,9 @@
 %%====================================================================
 %% API
 %%====================================================================
-connect(Servers, Nickname) ->
+connect(Server, Nickname) ->
     application:start(dchat_client),
-    lists:foreach(fun dchat_client_connection_manager:connect/1, Servers),
-    dchat_client_connection_manager:send({login, [Nickname]}).
+    dchat_client_connection_manager:connect(Server, Nickname).
 
 send(Recipient, Message) ->
     dchat_client_connection_manager:send({message, [Recipient, Message]}).
