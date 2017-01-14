@@ -14,15 +14,13 @@
 %% API
 %%====================================================================
 connect(Server, Nickname) ->
-    application:start(dchat_client),
     dchat_client_connection_manager:connect(Server, Nickname).
 
 send(Recipient, Message) ->
     dchat_client_connection_manager:send({message, [Recipient, Message]}).
 
 disconnect() ->
-    dchat_client_connection_manager:send({logout, []}),
-    application:stop(dchat_client).
+    dchat_client_connection_manager:send({logout, []}).
 
 start(_StartType, _StartArgs) ->
     dchat_client_sup:start_link().
