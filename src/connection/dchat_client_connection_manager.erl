@@ -55,7 +55,7 @@ add_alternative([Server]) ->
 
 init([]) ->
   {ok, #state{alternative = queue:new(), handlers = dict:from_list([
-    {add_server, fun (_Connection, Params) -> add_alternative(Params) end}
+    {add_server, [fun (_Connection, Params) -> add_alternative(Params) end]}
   ])}}.
 
 handle_call(_Request, _From, State) ->
@@ -70,7 +70,7 @@ handle_cast({send, Message}, State) ->
   {noreply, State};
 handle_cast({dispatch, Connection, Command, Params}, State) ->
   case dict:find(Command, State#state.handlers) of
-    {ok, Func} -> Func(Connection, Params);
+    {ok, [Func]} -> Func(Connection, Params);
     error -> io:format("unsupported command ~p(~p)~n", [Command, Params])
   end,
   {noreply, State};
