@@ -11,8 +11,9 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/2,
-  send/2]).
+-export([start_link/0,
+  send/2,
+  connect/3]).
 
 %% gen_server callbacks
 -export([init/1,
@@ -31,16 +32,24 @@
 send(Server, Message) ->
   gen_server:cast(Server, {send, Message}).
 
-start_link(Hostname, Port) ->
-  gen_server:start_link(?MODULE, [Hostname, Port], []).
+connect(Server, Hostname, Port) ->
+  gen_server:call(Server, {connect, Hostname, Port}).
+
+start_link() ->
+  gen_server:start_link(?MODULE, [], []).
 
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================
 
-init([Hostname, Port]) ->
-  {ok, #state{socket = internal_connect(Hostname, Port)}}.
+init([]) ->
+  {ok, #state{}}.
 
+handle_call({connect, Hostname, Port}, _From, State) ->
+  case internal_connect(Hostname, Port) of
+    {ok, Socket} -> {reply, ok, State#state{socket = Socket}};
+    {error, _Reason} -> {reply, error, State}
+  end;
 handle_call(_Request, _From, State) ->
   {reply, ok, State}.
 
@@ -71,5 +80,4 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 
 internal_connect(Hostname, Port) ->
-  {ok, Socket} = gen_tcp:connect(Hostname, Port, [binary, {active,true}, {packet,4}]),
-  Socket.
+  gen_tcp:connect(Hostname, Port, [binary, {active,true}, {packet,4}]).

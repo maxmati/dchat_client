@@ -87,8 +87,7 @@ handle_cast(_Request, State) ->
   {noreply, State}.
 
 handle_info({'DOWN',_,_,_,_}, State) ->
-  {{value, ServerInfo}, Queue} = queue:out(State#state.alternative),
-  Server = connect_to(ServerInfo, State#state.nickname),
+  {Server, Queue} = connect_any(State#state.alternative, State#state.nickname),
   {noreply, State#state{designated = Server, alternative = Queue}};
 handle_info(Info, State) ->
   io:format("unhandled info ~p~n", [Info]),
@@ -110,7 +109,17 @@ get_designated(Designated) ->
   Designated.
 
 connect_to({Hostname, Port}, Nickname) ->
-  {ok, Server} = dchat_client_connection_pool:connect(Hostname, Port),
-  monitor(process, Server),
-  dchat_client_connection:send(Server, {login, [Nickname]}),
-  Server.
+  case dchat_client_connection_pool:connect(Hostname, Port) of
+    {ok, Server} ->
+      monitor(process, Server),
+      dchat_client_connection:send(Server, {login, [Nickname]}),
+      {ok, Server};
+    {error} -> {error}
+  end.
+
+connect_any(Alternatives, Nickname) ->
+  {{value, ServerInfo}, Queue} = queue:out(Alternatives),
+  case connect_to(ServerInfo, Nickname) of
+    {ok, Server} -> {Server, Queue};
+    {error} -> connect_any(Queue, Nickname)
+  end.
