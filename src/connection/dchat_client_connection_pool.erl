@@ -21,7 +21,11 @@
 %%%===================================================================
 
 connect(Hostname, Port) ->
-  supervisor:start_child(?MODULE, [Hostname, Port]).
+  {ok, Server} = supervisor:start_child(?MODULE, []),
+  case dchat_client_connection:connect(Server, Hostname, Port) of
+    ok -> {ok, Server};
+    error -> {error}
+  end.
 
 get_any_connection() ->
   [{_, Pid, _, _}| _] = supervisor:which_children(?MODULE),

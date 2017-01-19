@@ -62,7 +62,7 @@ handle_call(_Request, _From, State) ->
   {reply, ok, State}.
 
 handle_cast({connect, Server, Nickname}, State) ->
-  Socket = connect_to(Server, Nickname),
+  {ok, Socket} = connect_to(Server, Nickname),
   {noreply, State#state{designated = Socket, nickname = Nickname}};
 handle_cast({send, Message}, State) ->
   Server = get_designated(State#state.designated),
@@ -87,9 +87,12 @@ handle_cast(_Request, State) ->
   {noreply, State}.
 
 handle_info({'DOWN',_,_,_,_}, State) ->
-  {{value, ServerInfo}, Queue} = queue:out(State#state.alternative),
-  Server = connect_to(ServerInfo, State#state.nickname),
-  {noreply, State#state{designated = Server, alternative = Queue}};
+  case connect_any(State#state.alternative, State#state.nickname) of
+    {error, Queue} ->
+      io:format("Unnable to connect to any server~n"),
+      {noreply, State#state{designated = undefined, alternative = Queue}};
+    {Server, Queue} -> {noreply, State#state{designated = Server, alternative = Queue}}
+  end;
 handle_info(Info, State) ->
   io:format("unhandled info ~p~n", [Info]),
   {noreply, State}.
@@ -110,7 +113,20 @@ get_designated(Designated) ->
   Designated.
 
 connect_to({Hostname, Port}, Nickname) ->
-  {ok, Server} = dchat_client_connection_pool:connect(Hostname, Port),
-  monitor(process, Server),
-  dchat_client_connection:send(Server, {login, [Nickname]}),
-  Server.
+  case dchat_client_connection_pool:connect(Hostname, Port) of
+    {ok, Server} ->
+      monitor(process, Server),
+      dchat_client_connection:send(Server, {login, [Nickname]}),
+      {ok, Server};
+    {error} -> {error}
+  end.
+
+connect_any(Alternatives, Nickname) ->
+  case queue:out(Alternatives) of
+    {{value, ServerInfo}, Queue}  ->
+      case connect_to(ServerInfo, Nickname) of
+        {ok, Server} -> {Server, Queue};
+        {error} -> connect_any(Queue, Nickname)
+      end;
+    {empty, Queue} -> {error, Queue}
+  end.
