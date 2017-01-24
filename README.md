@@ -7,3 +7,8 @@ Build
 -----
 
     $ rebar3 compile
+
+Run
+-----
+
+    $ dchat_ui:run().
